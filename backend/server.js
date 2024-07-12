@@ -4,6 +4,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import bodyParser from 'body-parser';
 import cors from 'cors';
+import bcrypt from 'bcrypt';
 
 const app = express();
 const server = http.createServer(app);
@@ -24,9 +25,9 @@ app.use((err, req, res, next) => {
 app.post('/signup', async (req, res) => {
   const { email, password, username } = req.body;
   try {
-    // À adapter pour le hachage du mot de passe (utilisation de bcrypt par exemple)
+    const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { email, password, username },
+      data: { email, password: hashedPassword, username },
     });
     res.json(user);
   } catch (error) {
@@ -40,7 +41,7 @@ app.post('/login', async (req, res) => {
     const user = await prisma.user.findUnique({
       where: { email },
     });
-    if (user && user.password === password) {
+    if (user && await bcrypt.compare(password, user.password)) {
       res.json(user);
     } else {
       res.status(401).send('Invalid credentials');
