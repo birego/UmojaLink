@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  email            String    @unique
+  password         String
+  username         String
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  friends          Friend[]  @relation("UserFriends")
+  sentMatches      Match[]   @relation("SentMatches")
+  receivedMatches  Match[]   @relation("ReceivedMatches")
+  receivedFriends  Friend[]  @relation("FriendUsers")
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  content    String
+  senderId   Int
+  receiverId Int
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model Friend {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  friendId  Int
+  user      User     @relation("UserFriends", fields: [userId], references: [id])
+  friend    User     @relation("FriendUsers", fields: [friendId], references: [id])
+
+  @@unique([userId, friendId])
+  createdAt DateTime @default(now())
+}
+
+model Match {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  matchId   Int
+  status    String
+  user      User     @relation("SentMatches", fields: [userId], references: [id])
+  match     User     @relation("ReceivedMatches", fields: [matchId], references: [id])
+  createdAt DateTime @default(now())
+}
